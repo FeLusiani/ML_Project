@@ -15,7 +15,7 @@ def load_monk_data(num: int, train=True):
             If False, load test data.
 
     Returns:
-        pandas.DataFrame: data
+        pandas.DataFrame: loaded dataset
     """
     data_type = 'train' if train else 'test'
     file = path_data / Path(f'./MONK/monks-{num}.{data_type}.txt')
