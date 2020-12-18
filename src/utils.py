@@ -39,7 +39,7 @@ def preprocess_monk(df):
     """
     # one-hot encoding
     df = pd.get_dummies(df, columns=df.columns[1:])
-    matrix = df.to_numpy(dtype=np.int)
+    matrix = df.to_numpy(dtype=np.float64)
     # shuffle rows
     np.random.shuffle(matrix)
 
