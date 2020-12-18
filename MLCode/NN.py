@@ -8,8 +8,32 @@ from collections import OrderedDict
 from torch.utils.data import TensorDataset, DataLoader
 
 
-class NN_BinClassifier(pl.LightningModule):
+class HyperParameters:
+    def save_to(self, dest_f: Path):
+        data = self.__dict__
+        dest_f.write_text(toml.dumps(data))
 
+    def load_from(self, src_f: Path):
+        data = toml.loads(src_f.read_text())
+        for k in data:
+            self.__dict__[k] = data[k]
+
+
+class NN_HyperParameters(HyperParameters):
+    def __init__(
+        self,
+        n_epochs: int = None,
+        lr: float = None,
+        momentum: float = None,
+        mb_size: int = None,
+    ):
+        self.n_epochs = n_epochs
+        self.lr = lr
+        self.momentum = momentum
+        self.mb_size = mb_size
+
+
+class NN_BinClassifier(pl.LightningModule):
     def __init__(self, layers, NN_HP: NN_HyperParameters, train_data, val_data):
         super().__init__()
 
@@ -33,61 +57,41 @@ class NN_BinClassifier(pl.LightningModule):
         X_val = torch.Tensor(X_val)
         Y_val = torch.Tensor(Y_val)
 
-        train_dataset = TensorDataset(X_tr, Y_tr) # create your datset
-        tr_dataloader = DataLoader(train_dataset) # create your dataloader
+        tr_dataset = TensorDataset(X_tr, Y_tr)
+        self.tr_dataloader = DataLoader(tr_dataset, batch_size=NN_HP.mb_size)
+
+        val_dataset = TensorDataset(X_val, Y_val)
+        self.val_dataloader = DataLoader(val_dataset)
 
     def forward(self, x):
         out = self.net(x)
         return out
 
     def training_step(self, batch, batch_idx):
-        # training_step defined the train loop.
-        # It is independent of forward
         x, y = batch
         out = self.net(x)
         loss = nn.functional.mse_loss(out, y)
         # Logging to TensorBoard by default
-        self.log('train_loss', loss)
+        self.log("train_loss", loss)
         return loss
-    
-    def training_epoch_end(self, training_step_outputs):
-        pass
+
+    def validation_step(self, batch, batch_idx):
+        x, y = batch
+        out = self.net(x)
+        loss = nn.functional.mse_loss(out, y)
+        # Logging to TensorBoard by default
+        self.log("val_err", loss)
+        return loss
 
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(self.parameters(), lr=1e-3, momentum=0.9)
         return optimizer
-    
+
     def val_dataloader(self):
-        return DataLoader(mnist_val, batch_size=64)
+        return self.tr_dataloader
 
     def test_dataloader(self):
-        my_dataset = TensorDataset(X,Y) # create your datset
-        my_dataloader = DataLoader(my_dataset) # create your dataloader
-    
-
-class HyperParameters:
-    def save_to(self, dest_f: Path):
-        data = self.__dict__
-        dest_f.write_text(toml.dumps(data))
-    
-    def load_from(self, src_f: Path):
-        data = toml.loads(src_f.read_text())
-        for k in data:
-            self.__dict__[k] = data[k]
-
-class NN_HyperParameters(HyperParameters):
-    def __init__(
-        self,
-        n_epochs: int = None,
-        lr: float = None,
-        momentum: float = None,
-        mb_size: int = None,
-    ):
-        self.n_epochs = n_epochs
-        self.lr = lr
-        self.momentum = momentum
-        self.mb_size = mb_size
-
+        return self.val_dataloader
 
 
 net = NN_BinClassifier([17, 7, 2])

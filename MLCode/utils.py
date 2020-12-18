@@ -8,6 +8,7 @@ def load_CUP_data(csv_file: Path):
 
 def load_monk_data(num: int, train=True):
     """Returns dataframe with monk dataset.
+    One-hot encoding is applied to the attribute values.
 
     Args:
         num (int): determines which monk dataset to load (1, 2 or 3)
@@ -24,32 +25,36 @@ def load_monk_data(num: int, train=True):
     lines = lines[:-1]
     rows = [l.strip().split(' ') for l in lines]
     col_names = ['out','a1','a2','a3','a4','a5','a6', 'ID']
-    return pd.DataFrame(rows, columns=col_names).set_index('ID')
+    df = pd.DataFrame(rows, columns=col_names).set_index('ID')
+    return pd.get_dummies(df, columns=df.columns[1:])
 
 
-def preprocess_monk(df):
-    """Applies one-hot encoding of input values,
-    and rescales binary labels `0,1` to `0.1,0.9`.
+def np_monk(df, X_type=np.float, Y_type=np.int):
+    """Returns monk dataset as `(X, Y)` numpy arrays.
+    The dataset is also shuffled.
 
     Args:
         df (pandas.DataFrame): monk dataset
-
-    Returns:
-        X, Y: `(values, labels)` tuple
+        X_type (numpy.dtype): data type for instances `X`.
+        Y_type (numpy.dtype): data type for labels `Y`.
     """
-    # one-hot encoding
-    df = pd.get_dummies(df, columns=df.columns[1:])
-    matrix = df.to_numpy(dtype=np.float64)
+    matrix = df.to_numpy()
     # shuffle rows
     np.random.shuffle(matrix)
-
     X = matrix[:,1:]
-    # X = matrix[:,1:].astype(np.float)
-    # rescale labels
+    X = X.astype(X_type)
+
+    Y = matrix[:,0]
+    Y = Y.astype(Y_type)
+
+    return X, Y
+
+
+def rescale_bin(data):
+    """Rescale numpy binary array: `(0,1)` -> `(0.1,0.9)` """
     rescale = lambda x: 0.1 if x == 0 else 0.9
     v_rescale = np.vectorize(rescale)
-    Y = v_rescale(matrix[:,0])
-    return X, Y
+    return v_rescale(data)
 
 
     
