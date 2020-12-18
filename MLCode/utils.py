@@ -1,7 +1,7 @@
 from pathlib import Path
 import pandas as pd
 import numpy as np
-from conf import path_data
+from .conf import path_data
 
 def load_CUP_data(csv_file: Path):
     return pd.read_csv(csv_file,skiprows=7, header=None, index_col=0)
