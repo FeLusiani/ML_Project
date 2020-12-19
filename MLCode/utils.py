@@ -46,6 +46,7 @@ def np_monk(df, X_type=np.float, Y_type=np.int):
 
     Y = matrix[:,0]
     Y = Y.astype(Y_type)
+    Y = Y.reshape(-1,1)
 
     return X, Y
 

@@ -33,10 +33,11 @@ class NN_HyperParameters(HyperParameters):
         self.mb_size = mb_size
 
 
-class NN_BinClassifier(pl.LightningModule):
+class NN_BinClassifier(nn.Module):
     def __init__(self, layers, NN_HP: NN_HyperParameters, train_data, val_data):
         super().__init__()
 
+        self.NN_HP = NN_HP
         net_topology = OrderedDict()
         for i in range(len(layers)):
             if i != len(layers) - 1:
@@ -49,6 +50,10 @@ class NN_BinClassifier(pl.LightningModule):
 
         self.net = torch.nn.Sequential(net_topology)
 
+        self.optimizer = torch.optim.SGD(
+            self.parameters(), lr=self.NN_HP.lr, momentum=self.NN_HP.momentum
+        )
+
         X_tr, Y_tr = train_data
         X_val, Y_val = val_data
 
@@ -58,10 +63,16 @@ class NN_BinClassifier(pl.LightningModule):
         Y_val = torch.Tensor(Y_val)
 
         tr_dataset = TensorDataset(X_tr, Y_tr)
-        self.tr_dataloader = DataLoader(tr_dataset, batch_size=NN_HP.mb_size)
+        self.tr_dl = DataLoader(tr_dataset, batch_size=NN_HP.mb_size)
 
         val_dataset = TensorDataset(X_val, Y_val)
-        self.val_dataloader = DataLoader(val_dataset)
+        self.val_dl = DataLoader(val_dataset, batch_size=NN_HP.mb_size)
+
+        self.loss_f = torch.nn.MSELoss()
+        self.loss = 0
+        self.err_f = torch.nn.L1Loss()
+        self.tr_err = 0
+        self.val_err = 0
 
     def forward(self, x):
         out = self.net(x)
@@ -70,57 +81,36 @@ class NN_BinClassifier(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         out = self.net(x)
-        loss = nn.functional.mse_loss(out, y)
-        # Logging to TensorBoard by default
-        self.log("train_loss", loss)
+        # for scalar output, MEE == L1 Loss
+        err = self.err_f(out, y)
+        loss = self.loss_f(out, y)
+        self.tr_err += err
         return loss
+
+    def train_epoch_end(self):
+        # Logging to TensorBoard by default
+        self.log("train_err", self.tr_err)
+        self.tr_err = 0
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         out = self.net(x)
-        loss = nn.functional.mse_loss(out, y)
+        # for scalar output, MEE == L1 Loss
+        err = self.err_f(out, y)
+        self.val_err += err
+        return err
+
+    def validation_epoch_end(self, val_step_outputs):
         # Logging to TensorBoard by default
-        self.log("val_err", loss)
-        return loss
+        self.log("val_err", sum(val_step_outputs) / len(val_step_outputs))
 
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(self.parameters(), lr=1e-3, momentum=0.9)
+
         return optimizer
 
+    def train_dataloader(self):
+        return self.tr_dl
+
     def val_dataloader(self):
-        return self.tr_dataloader
-
-    def test_dataloader(self):
-        return self.val_dataloader
-
-
-net = NN_BinClassifier([17, 7, 2])
-criterion = torch.nn.MSELoss()
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-
-
-def train_NN(X_train, Y_train, X_val, Y_val, NN_HP: NN_HyperParameters):
-    for epoch in range(NN_HP.epochs):  # loop over the dataset multiple times
-
-        running_loss = 0.0
-        for i in range(X_train.shape[0]):
-            # get the inputs; data is a list of [inputs, labels]
-            inputs = torch.Tensor(X_train[i : min(i + 10, X_train.shape[0]), :])
-            labels = torch.Tensor(
-                Y_train[i : min(i + 10, X_train.shape[0])].reshape(-1, 1)
-            )
-
-            # zero the parameter gradients
-            optimizer.zero_grad()
-
-            # forward + backward + optimize
-            outputs = net(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-            running_loss += loss.item()
-
-        # print epoch statistics
-
-        if i % 1 == 0:  # print every 1 epochs
-            print(f"epoch {epoch} \t loss: {running_loss :.3f}")
+        return self.val_dl
