@@ -23,15 +23,19 @@ class NN_HyperParameters(HyperParameters):
     def __init__(
         self,
         layers,
-        n_epochs: int = None,
+        stop_after: int = None,
         lr: float = None,
-        momentum: float = None,
+        beta1: float = None,
+        beta2: float = None,
+        weight_decay=None,
         mb_size: int = None,
     ):
         self.layers = layers
-        self.n_epochs = n_epochs
+        self.stop_after = stop_after
         self.lr = lr
-        self.momentum = momentum
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.weight_decay = weight_decay
         self.mb_size = mb_size
 
 
@@ -55,8 +59,11 @@ class NN_BinClassifier(pl.LightningModule):
 
         self.net = torch.nn.Sequential(net_topology)
 
-        self.optimizer = torch.optim.SGD(
-            self.parameters(), lr=self.NN_HP.lr, momentum=self.NN_HP.momentum
+        self.optimizer = torch.optim.Adam(
+            self.parameters(),
+            lr=self.NN_HP.lr,
+            betas=(self.NN_HP.beta1, self.NN_HP.beta1),
+            weight_decay=self.NN_HP.weight_decay,
         )
 
         self.loss_f = torch.nn.MSELoss()
@@ -73,13 +80,19 @@ def epoch_minibatches(mb_size, X, Y):
 
     data_size = X.shape[0]
     permutation = torch.randperm(data_size)
-    for i in range(0,data_size, mb_size):
-        indices = permutation[i:i+mb_size]
-        yield(X[indices], Y[indices])
-        
+    for i in range(0, data_size, mb_size):
+        indices = permutation[i : i + mb_size]
+        yield (X[indices], Y[indices])
 
 
-def train_NN(model, X_train, Y_train, X_val, Y_val):
+def binary_acc(y_pred, y_test):
+    y_pred = torch.round(y_pred)
+    correct_results_sum = (y_pred == y_test).sum().float()
+    acc = correct_results_sum / y_test.shape[0]
+    return acc.item()
+
+
+def train_NN_monk(model, X_train, Y_train, X_val, Y_val, n_epochs):
 
     X_train = torch.Tensor(X_train)
     Y_train = torch.Tensor(Y_train)
@@ -89,20 +102,18 @@ def train_NN(model, X_train, Y_train, X_val, Y_val):
     tr_errors = []
     val_errors = []
     losses = []
+    tr_accuracies = []
+    val_accuracies = []
 
     mb_size = model.NN_HP.mb_size
-    for epoch in range(model.NN_HP.n_epochs):
+    for epoch in range(n_epochs):
         tr_minibatches = epoch_minibatches(mb_size, X_train, Y_train)
         epoch_loss = 0.0
+        tr_epoch_acc = 0.0
         tr_epoch_err = 0.0
         n_minibatches = 0
 
         for inputs, labels in tr_minibatches:
-        # for i in range(X_train.shape[0]):
-            # inputs = X_train[i,:]
-            # labels = Y_train[i]
-
-            # zero the parameter gradients
             model.optimizer.zero_grad()
 
             # forward + backward + optimize
@@ -110,17 +121,26 @@ def train_NN(model, X_train, Y_train, X_val, Y_val):
             loss = model.loss_f(outputs, labels)
             loss.backward()
             model.optimizer.step()
+
+            # logging
             epoch_loss += loss.item()
+            tr_epoch_acc += binary_acc(outputs, labels)
             tr_epoch_err += model.err_f(outputs, labels).item()
 
             n_minibatches += 1
 
-        # print epoch statistics
-        tr_err = tr_epoch_err/n_minibatches
+        # epoch statistics
+        tr_acc = tr_epoch_acc / n_minibatches
+        tr_accuracies.append(tr_acc)
+        tr_err = tr_epoch_err / n_minibatches
         tr_errors.append(tr_err)
+
+        val_acc = binary_acc(model(X_val), Y_val)
+        val_accuracies.append(val_acc)
         val_err = model.err_f(model(X_val), Y_val).item()
         val_errors.append(val_err)
-        losses.append(epoch_loss/n_minibatches)
-        print(f"epoch {epoch} \t val_err: {val_err :.3f} \t tr_err: {tr_err :.3f}")
-        # print(f"epoch {epoch} \t loss: {epoch_loss :.3f}")
-    return tr_errors, val_errors, losses
+
+        losses.append(epoch_loss / n_minibatches)
+        # print(f"epoch {epoch} \t val_err: {val_err :.3f} \t val_acc: {val_acc :.3f}")
+
+    return tr_errors, val_errors, tr_accuracies, val_accuracies, losses

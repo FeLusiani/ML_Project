@@ -2,9 +2,18 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from .conf import path_data
+import matplotlib.pyplot as plt
 
-def load_CUP_data(csv_file: Path):
-    return pd.read_csv(csv_file,skiprows=7, header=None, index_col=0)
+
+def load_CUP_data(train=True):
+    """Returns dataframe with CUP dataset.
+    If `train=True` (default), training data is loaded,
+    else test data is loaded.
+    """
+    type = "TR" if train else "TS"
+    csv_file = path_data / Path(f"ML_CUP/ML-CUP20-{type}.csv")
+    return pd.read_csv(csv_file, skiprows=7, header=None, index_col=0)
+
 
 def load_monk_data(num: int, train=True):
     """Returns dataframe with monk dataset.
@@ -18,14 +27,14 @@ def load_monk_data(num: int, train=True):
     Returns:
         pandas.DataFrame: loaded dataset
     """
-    data_type = 'train' if train else 'test'
-    file = path_data / Path(f'./MONK/monks-{num}.{data_type}.txt')
-    lines = file.read_text().split('\n')
+    data_type = "train" if train else "test"
+    file = path_data / Path(f"./MONK/monks-{num}.{data_type}.txt")
+    lines = file.read_text().split("\n")
     # delete last empty line
     lines = lines[:-1]
-    rows = [l.strip().split(' ') for l in lines]
-    col_names = ['out','a1','a2','a3','a4','a5','a6', 'ID']
-    df = pd.DataFrame(rows, columns=col_names).set_index('ID')
+    rows = [l.strip().split(" ") for l in lines]
+    col_names = ["out", "a1", "a2", "a3", "a4", "a5", "a6", "ID"]
+    df = pd.DataFrame(rows, columns=col_names).set_index("ID")
     return pd.get_dummies(df, columns=df.columns[1:])
 
 
@@ -41,12 +50,12 @@ def np_monk(df, X_type=np.float, Y_type=np.int):
     matrix = df.to_numpy()
     # shuffle rows
     np.random.shuffle(matrix)
-    X = matrix[:,1:]
+    X = matrix[:, 1:]
     X = X.astype(X_type)
 
-    Y = matrix[:,0]
+    Y = matrix[:, 0]
     Y = Y.astype(Y_type)
-    Y = Y.reshape(-1,1)
+    Y = Y.reshape(-1, 1)
 
     return X, Y
 
@@ -58,4 +67,11 @@ def rescale_bin(data):
     return v_rescale(data)
 
 
-    
+def plot_NN_TR_TS(tr_stat, test_stat, name='error'):
+    _, ax = plt.subplots()
+    ax.plot(tr_stat, label="training")
+    ax.plot(test_stat, label="test")
+    ax.legend()
+    ax.set(xlabel='epoch', ylabel=name)
+    ax.set_title(name+' per epoch')
+    return ax
