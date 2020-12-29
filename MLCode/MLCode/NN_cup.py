@@ -1,45 +1,27 @@
 import torch
 from torch import nn
-from pathlib import Path
 import pandas as pd
-import toml
-import pytorch_lightning as pl
 from collections import OrderedDict
-from torch.utils.data import TensorDataset, DataLoader
+from .NN import NN_HyperParameters, epoch_minibatches
+import datetime
 
+def writeOutput(result, name):
+    # Name1  Surname1, Name2 Surname2
+    # Group Nickname
+    # ML-CUP18
+    # 02/11/2018
+    df = pd.DataFrame(result)
+    now = datetime.datetime.now()
+    f = open(name, 'w')
+    f.write('# Christian Esposito, Federico Lusiani\n')
+    f.write('# Cheesleaders\n')
+    f.write('# ML-CUP20\n')
+    f.write('# '+str(now.day)+'/'+str(now.month)+'/'+str(now.year)+'\n')
+    df.index += 1 
+    df.to_csv(f, sep=',', encoding='utf-8', header = False)
+    f.close()
 
-class HyperParameters:
-    def save_to(self, dest_f: Path):
-        data = self.__dict__
-        dest_f.write_text(toml.dumps(data))
-
-    def load_from(self, src_f: Path):
-        data = toml.loads(src_f.read_text())
-        for k in data:
-            self.__dict__[k] = data[k]
-
-
-class NN_HyperParameters(HyperParameters):
-    def __init__(
-        self,
-        layers,
-        stop_after: int = None,
-        lr: float = None,
-        beta1: float = None,
-        beta2: float = None,
-        weight_decay=None,
-        mb_size: int = None,
-    ):
-        self.layers = layers
-        self.stop_after = stop_after
-        self.lr = lr
-        self.beta1 = beta1
-        self.beta2 = beta2
-        self.weight_decay = weight_decay
-        self.mb_size = mb_size
-
-
-class NN_BinClassifier(pl.LightningModule):
+class NN_BinClassifier(nn.Module):
     def __init__(self, NN_HP: NN_HyperParameters):
         super().__init__()
 
@@ -74,24 +56,6 @@ class NN_BinClassifier(pl.LightningModule):
         return out
 
 
-def epoch_minibatches(mb_size, X, Y):
-    """Returns minibatches iterator form numpy ndarrays.
-    Data is sampled randomly to create minibatches."""
-
-    data_size = X.shape[0]
-    permutation = torch.randperm(data_size)
-    for i in range(0, data_size, mb_size):
-        indices = permutation[i : i + mb_size]
-        yield (X[indices], Y[indices])
-
-
-def binary_acc(y_pred, y_test):
-    y_pred = torch.round(y_pred)
-    correct_results_sum = (y_pred == y_test).sum().float()
-    acc = correct_results_sum / y_test.shape[0]
-    return acc.item()
-
-
 def train_NN_monk(model, X_train, Y_train, X_val, Y_val, n_epochs):
 
     X_train = torch.Tensor(X_train)
@@ -106,7 +70,7 @@ def train_NN_monk(model, X_train, Y_train, X_val, Y_val, n_epochs):
     val_accuracies = []
 
     mb_size = model.NN_HP.mb_size
-    for epoch in range(n_epochs):
+    for _ in range(n_epochs):
         tr_minibatches = epoch_minibatches(mb_size, X_train, Y_train)
         epoch_loss = 0.0
         tr_epoch_acc = 0.0
