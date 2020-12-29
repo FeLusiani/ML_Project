@@ -5,7 +5,7 @@ from .conf import path_data
 import matplotlib.pyplot as plt
 
 
-def load_CUP_data(train=True):
+def load_cup_data(train=True):
     """Returns dataframe with CUP dataset.
     If `train=True` (default), training data is loaded,
     else test data is loaded.
@@ -39,23 +39,30 @@ def load_monk_data(num: int, train=True):
 
 
 def np_monk(df, X_type=np.float, Y_type=np.int):
-    """Returns monk dataset as `(X, Y)` numpy arrays.
-    The dataset is also shuffled.
-
-    Args:
-        df (pandas.DataFrame): monk dataset
-        X_type (numpy.dtype): data type for instances `X`.
-        Y_type (numpy.dtype): data type for labels `Y`.
+    """Returns monk dataset as `(X, Y)` numpy arrays,
+    respectively of type `X_type` and `Y_type`.
     """
     matrix = df.to_numpy()
-    # shuffle rows
-    np.random.shuffle(matrix)
     X = matrix[:, 1:]
     X = X.astype(X_type)
 
     Y = matrix[:, 0]
     Y = Y.astype(Y_type)
     Y = Y.reshape(-1, 1)
+
+    return X, Y
+
+
+def np_cup(df, X_type=np.float, Y_type=np.int):
+    """Returns CUP dataset as `(X, Y)` numpy arrays,
+    respectively of type `X_type` and `Y_type`.
+    """
+    matrix = df.to_numpy()
+    X = matrix[:, :8]
+    X = X.astype(X_type)
+
+    Y = matrix[:, 8:]
+    Y = Y.astype(Y_type)
 
     return X, Y
 
@@ -71,6 +78,16 @@ def plot_NN_TR_TS(tr_stat, test_stat, name='error'):
     _, ax = plt.subplots()
     ax.plot(tr_stat, label="training")
     ax.plot(test_stat, label="test")
+    ax.legend()
+    ax.set(xlabel='epoch', ylabel=name)
+    ax.set_title(name+' per epoch')
+    return ax
+
+
+def plot_NN_TR_VAL(tr_stat, val_stat, name='error'):
+    _, ax = plt.subplots()
+    ax.plot(tr_stat, label="training")
+    ax.plot(val_stat, label="validation")
     ax.legend()
     ax.set(xlabel='epoch', ylabel=name)
     ax.set_title(name+' per epoch')

@@ -6,13 +6,9 @@ from .NN import NN_HyperParameters, NN_module, epoch_minibatches
 
 
 class NN_BinClassifier(NN_module):
-    def __init__(self, NN_HP: NN_HyperParameters):
-        super().__init__(NN_HP)
-        self.outfunc = nn.Sigmoid()
-
     def forward(self, x):
         out = self.net(x)
-        return self.outfunc(out)
+        return nn.functional.sigmoid(out)
 
 
 def binary_acc(y_pred, y_test):
@@ -22,7 +18,7 @@ def binary_acc(y_pred, y_test):
     return acc.item()
 
 
-def train_NN_monk(model, X_train, Y_train, X_val, Y_val, n_epochs):
+def train_NN_monk(model, X_train, Y_train, X_val, Y_val, max_epochs):
 
     X_train = torch.Tensor(X_train)
     Y_train = torch.Tensor(Y_train)
@@ -36,12 +32,13 @@ def train_NN_monk(model, X_train, Y_train, X_val, Y_val, n_epochs):
     val_accuracies = []
 
     mb_size = model.NN_HP.mb_size
-    for _ in range(n_epochs):
+    n_minibatches = X_train.shape[0] // mb_size
+
+    for _ in range(max_epochs):
         tr_minibatches = epoch_minibatches(mb_size, X_train, Y_train)
         epoch_loss = 0.0
         tr_epoch_acc = 0.0
         tr_epoch_err = 0.0
-        n_minibatches = 0
 
         for inputs, labels in tr_minibatches:
             model.optimizer.zero_grad()
@@ -56,8 +53,6 @@ def train_NN_monk(model, X_train, Y_train, X_val, Y_val, n_epochs):
             epoch_loss += loss.item()
             tr_epoch_acc += binary_acc(outputs, labels)
             tr_epoch_err += model.err_f(outputs, labels).item()
-
-            n_minibatches += 1
 
         # epoch statistics
         tr_acc = tr_epoch_acc / n_minibatches

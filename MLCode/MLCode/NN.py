@@ -7,7 +7,6 @@ class NN_HyperParameters:
     def __init__(
         self,
         layers,
-        stop_after: int = None,
         lr: float = None,
         beta1: float = None,
         beta2: float = None,
@@ -15,7 +14,6 @@ class NN_HyperParameters:
         mb_size: int = None,
     ):
         self.layers = layers
-        self.stop_after = stop_after
         self.lr = lr
         self.beta1 = beta1
         self.beta2 = beta2
@@ -24,6 +22,10 @@ class NN_HyperParameters:
 
 
 class NN_module(nn.Module):
+    """Creates a `torch.nn.Module` that takes a `NN_HyperParameters` object
+    for initialization. Note that the output layer has no activation function.
+    It can be added when defining the `forward` method.
+    """
     def __init__(self, NN_HP: NN_HyperParameters):
         super().__init__()
 
