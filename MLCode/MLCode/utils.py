@@ -43,6 +43,7 @@ def np_monk(df, X_type=np.float, Y_type=np.int):
     respectively of type `X_type` and `Y_type`.
     """
     matrix = df.to_numpy()
+
     X = matrix[:, 1:]
     X = X.astype(X_type)
 
@@ -53,16 +54,15 @@ def np_monk(df, X_type=np.float, Y_type=np.int):
     return X, Y
 
 
-def np_cup(df, X_type=np.float, Y_type=np.int):
-    """Returns CUP dataset as `(X, Y)` numpy arrays,
-    respectively of type `X_type` and `Y_type`.
+def np_cup_TR(df):
+    """Returns the CUP TR dataset as `(X, Y)` numpy arrays.
+    The data is also shuffled. 
     """
     matrix = df.to_numpy()
-    X = matrix[:, :8]
-    X = X.astype(X_type)
+    np.random.shuffle(matrix)
 
-    Y = matrix[:, 8:]
-    Y = Y.astype(Y_type)
+    X = matrix[:, :10]
+    Y = matrix[:, 10:]
 
     return X, Y
 

@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 import pandas as pd
-from collections import OrderedDict
-from .NN import NN_HyperParameters, epoch_minibatches, NN_module
+from math import ceil
+from .NN import NN_HyperParameters, epoch_minibatches, NN_module, MEE
 import datetime
 
 
@@ -44,7 +44,7 @@ def train_NN_cup(model, X_train, Y_train, X_val, Y_val, stop_after=20, max_epoch
     since_lowest = 0
 
     mb_size = model.NN_HP.mb_size
-    n_minibatches = X_train.shape[0] // mb_size
+    n_samples = X_train.shape[0]
 
     for _ in range(max_epochs):
         tr_minibatches = epoch_minibatches(mb_size, X_train, Y_train)
@@ -63,15 +63,15 @@ def train_NN_cup(model, X_train, Y_train, X_val, Y_val, stop_after=20, max_epoch
             # logging is made optional for performance
             if logging:
                 epoch_loss += loss.item()
-                tr_epoch_err += model.err_f(outputs, labels).item()
+                tr_epoch_err += MEE(outputs, labels, mean=False)
 
         # epoch statistics
         if logging:
-            tr_err = tr_epoch_err / n_minibatches
+            tr_err = tr_epoch_err / n_samples
             tr_errors.append(tr_err)
-            losses.append(epoch_loss / n_minibatches)
+            losses.append(epoch_loss * mb_size / n_samples)
 
-        val_err = model.err_f(model(X_val), Y_val).item()
+        val_err = MEE(model(X_val), Y_val)
         val_errors.append(val_err)
 
         # early stopping implementation

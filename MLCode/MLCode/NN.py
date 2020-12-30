@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch.linalg import norm
 from collections import OrderedDict
 
 
@@ -26,7 +27,8 @@ class NN_module(nn.Module):
     for initialization. Note that the output layer has no activation function.
     It can be added when defining the `forward` method.
     """
-    def __init__(self, NN_HP: NN_HyperParameters):
+
+    def __init__(self, out_size, NN_HP: NN_HyperParameters):
         super().__init__()
 
         self.NN_HP = NN_HP
@@ -52,7 +54,6 @@ class NN_module(nn.Module):
         )
 
         self.loss_f = nn.MSELoss()
-        self.err_f = nn.L1Loss()
 
 
 def epoch_minibatches(mb_size, X, Y):
@@ -64,3 +65,14 @@ def epoch_minibatches(mb_size, X, Y):
     for i in range(0, data_size, mb_size):
         indices = permutation[i : i + mb_size]
         yield (X[indices], Y[indices])
+
+
+def MEE(x,y,mean=True):
+    """Iteratates along the first axis and
+    applies the euclidean distance to each element.
+    The resulting values are averaged if `mean=True` (default),
+    otherwise summed."""
+    length = x.shape[0]
+    r = sum([norm(x[i]-y[i]) for i in range(length)])
+    r = r.item()
+    return r/length if mean else r
