@@ -22,13 +22,19 @@ class NN_HyperParameters:
         self.mb_size = mb_size
 
 
+def weights_init(m):
+    if isinstance(m, nn.Linear):
+        torch.nn.init.xavier_normal_(m.weight)
+        torch.nn.init.zeros_(m.bias)
+
+
 class NN_module(nn.Module):
     """Creates a `torch.nn.Module` that takes a `NN_HyperParameters` object
     for initialization. Note that the output layer has no activation function.
     It can be added when defining the `forward` method.
     """
 
-    def __init__(self, out_size, NN_HP: NN_HyperParameters):
+    def __init__(self, out_size: int, NN_HP: NN_HyperParameters):
         super().__init__()
 
         self.NN_HP = NN_HP
@@ -42,9 +48,11 @@ class NN_module(nn.Module):
                 net_topology[f"LeakyReLu{i}"] = nn.LeakyReLU()
             else:
                 # last layer (output)
-                net_topology[f"fc{i}"] = nn.Linear(layers[i], 1)
+                net_topology[f"fc{i}"] = nn.Linear(layers[i], out_size)
 
         self.net = nn.Sequential(net_topology)
+        self.apply(weights_init)
+
 
         self.optimizer = torch.optim.Adam(
             self.parameters(),
@@ -72,6 +80,7 @@ def MEE(x,y,mean=True):
     applies the euclidean distance to each element.
     The resulting values are averaged if `mean=True` (default),
     otherwise summed."""
+    assert x.shape == y.shape, 'x and y must have same shape'
     length = x.shape[0]
     r = sum([norm(x[i]-y[i]) for i in range(length)])
     r = r.item()

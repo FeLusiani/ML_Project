@@ -92,3 +92,29 @@ def plot_NN_TR_VAL(tr_stat, val_stat, name='error'):
     ax.set(xlabel='epoch', ylabel=name)
     ax.set_title(name+' per epoch')
     return ax
+
+
+def unique_path(directory, name_pattern):
+    counter = 0
+    while True:
+        counter += 1
+        path = directory / name_pattern.format(counter)
+        if not path.exists():
+            return path
+
+
+def writeOutput(result, name):
+    # Name1  Surname1, Name2 Surname2
+    # Group Nickname
+    # ML-CUP18
+    # 02/11/2018
+    df = pd.DataFrame(result)
+    now = datetime.datetime.now()
+    f = open(name, "w")
+    f.write("# Christian Esposito, Federico Lusiani\n")
+    f.write("# Cheesleaders\n")
+    f.write("# ML-CUP20\n")
+    f.write("# " + str(now.day) + "/" + str(now.month) + "/" + str(now.year) + "\n")
+    df.index += 1
+    df.to_csv(f, sep=",", encoding="utf-8", header=False)
+    f.close()
