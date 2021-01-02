@@ -94,8 +94,9 @@ def train_NN_cup(model, X_train, Y_train, X_val, Y_val, patience=20, max_epochs=
 
 def save_training(stats, NN_HP: NN_HyperParameters):
     nn_folder = path_data / Path('NN_training')
-    layers = [str(x) for x in NN_HP.layers[1:]]
-    model_name = 'x'.join(layers) + f'_{NN_HP.lr:.1E}'
+    n_hidden = len(NN_HP.layers)-1
+    n_units = NN_HP.layers[1]
+    model_name =  f'{n_hidden}x{n_units}_{NN_HP.lr:.1E}'
     save_folder = nn_folder / Path(model_name)
     #save_folder = unique_path(nn_folder, model_name+'_{:03d}')
     save_folder.mkdir()
