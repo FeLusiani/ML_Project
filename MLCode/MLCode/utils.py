@@ -77,7 +77,7 @@ def rescale_bin(data):
 def plot_NN_TR_TS(tr_stat, test_stat, name='error'):
     _, ax = plt.subplots()
     ax.plot(tr_stat, label="training")
-    ax.plot(test_stat, label="test")
+    ax.plot(test_stat, '--', label="test")
     ax.legend()
     ax.set(xlabel='epoch', ylabel=name)
     ax.set_title(name+' per epoch')
@@ -87,7 +87,7 @@ def plot_NN_TR_TS(tr_stat, test_stat, name='error'):
 def plot_NN_TR_VAL(tr_stat, val_stat, name='error'):
     _, ax = plt.subplots()
     ax.plot(tr_stat, label="training")
-    ax.plot(val_stat, label="validation")
+    ax.plot(val_stat, '--', label="validation")
     ax.legend()
     ax.set(xlabel='epoch', ylabel=name)
     ax.set_title(name+' per epoch')

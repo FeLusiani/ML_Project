@@ -1,14 +1,19 @@
 import torch
 from torch import nn
-from math import ceil
-from .NN import NN_HyperParameters, epoch_minibatches, NN_module, MEE
+from math import ceil, sqrt
+from .NN import NN_HyperParameters, epoch_minibatches, NN_module, MEE, weights_init
 import datetime
-from MLCode.utils import unique_path, plot_NN_TR_VAL
+from MLCode.utils import plot_NN_TR_VAL
 from .conf import path_data
 from pathlib import Path
 import toml
 import matplotlib.pyplot as plt
 import time
+from MLCode.conf import path_data
+import pandas as pd
+from sklearn.model_selection import KFold
+import numpy as np
+
 
 
 class NN_Regressor(NN_module):
@@ -113,9 +118,67 @@ def save_training(stats, NN_HP: NN_HyperParameters):
 
     info_file = save_folder / Path('infos.txt')
     info_text = toml.dumps(NN_HP.__dict__)
-    info_text += f'\nVal error achieved: {MEE_mean}'
-    info_text += f'\n measured with variance: {MEE_var}'
+    info_text += f'\nMEE mean: {MEE_mean}'
+    info_text += f'\nMEE std: {MEE_var}'
     info_text += f'\nTime (seconds): {seconds}'
     info_text += f'\nConvergence: {converged}'
     info_file.write_text(info_text)
     print(info_text)
+
+
+# train with K-fold cross-validation
+def train_NN_K_validation(model, k_folds:int, X_dev, Y_dev, iters:int=None):
+    """Train NN with k-fold cross-validation. If `iters` is set,
+    instead of using all the folds, it will reach a number of `iters`
+    training iterations.
+
+    Returns `(MEE_mean, MEE_std, seconds, converged:Bool)`
+    """
+    kf = KFold(k_folds)
+    val_errors = []
+    seconds = 0
+    converged = True
+    for train_index, val_index in kf.split(X_dev):
+        X_train, Y_train = X_dev[train_index], Y_dev[train_index]
+        X_val, Y_val = X_dev[val_index], Y_dev[val_index]
+        stats = train_NN_cup(model, X_train, Y_train, X_val, Y_val, 20,500,False)
+        model.apply(weights_init)
+        MEE, sec, conv = stats
+        val_errors.append(MEE)
+        seconds += sec
+        converged = converged and conv
+        if iters:
+            iters -= 1
+            if iters == 0: break
+
+    val_errors = np.array(val_errors)
+    MEE_mean = np.mean(val_errors)
+    MEE_std = np.std(val_errors)
+    return MEE_mean, MEE_std, seconds, converged
+
+
+
+def get_model_val_err(directory: Path):
+    """Returns validation error (mean and std) from saved model directory.
+    """
+    info_file = directory / Path('infos.txt')
+    info_text = info_file.read_text()
+    lines = info_text.split('\n')
+    mean_line = [x for x in lines if x.startswith('MEE mean: ') ][0]
+    var_line = [x for x in lines if x.startswith('MEE std: ') ][0]
+    n_char_mean = len('MEE mean: ')
+    n_char_var = len('MEE std: ')
+    return float(mean_line[n_char_mean:]), float(var_line[n_char_var:])
+
+def saved_NN_models():
+    """Returns a pandas DataFrame with `model_name, MEE_mean, MEE_std`
+    for each saved NN model."""
+
+    NN_directory = path_data / Path('NN_training')
+    models = []
+    for dir in NN_directory.iterdir():
+        val_err = get_model_val_err(dir)
+        model = (dir.name, val_err[0], val_err[1])
+        models.append(model)
+    
+    return pd.DataFrame(models, columns=['model_name', 'MEE_mean', 'MEE_std'])
