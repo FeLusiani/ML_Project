@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from .conf import path_data
 import matplotlib.pyplot as plt
+import datetime
 
 
 def load_cup_data(train=True):
@@ -13,6 +14,11 @@ def load_cup_data(train=True):
     type = "TR" if train else "TS"
     csv_file = path_data / Path(f"ML_CUP/ML-CUP20-{type}.csv")
     return pd.read_csv(csv_file, skiprows=7, header=None, index_col=0)
+
+
+def load_shuffled_cup():
+    csv_file = path_data / Path('shuffled_cup.csv')
+    return pd.read_csv(csv_file, index_col=0)
 
 
 def load_monk_data(num: int, train=True):
@@ -54,12 +60,21 @@ def np_monk(df, X_type=np.float, Y_type=np.int):
     return X, Y
 
 
-def np_cup_TR(df):
-    """Returns the CUP TR dataset as `(X, Y)` numpy arrays.
-    The data is also shuffled. 
+def np_cup_TR(df, test=False):
+    """Returns `(X, Y)` numpy arrays from a CUP dataset (`pandas.DataFrame`).
+    If `test=False` (default), only the first 90% of the data will be returned,
+    otherwise only the remaining 10% will be returned.
     """
     matrix = df.to_numpy()
-    np.random.shuffle(matrix)
+    # test samples are 10% of all the samples
+    test_samples = matrix.shape[0] // 10 
+
+    if test:
+        # the last 10%
+        matrix = matrix[-test_samples:]
+    else:
+        # the first 90%
+        matrix = matrix[:-test_samples]
 
     X = matrix[:, :10]
     Y = matrix[:, 10:]
