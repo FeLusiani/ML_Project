@@ -17,7 +17,7 @@ def load_cup_data(train=True):
 
 
 def load_shuffled_cup():
-    csv_file = path_data / Path('shuffled_cup.csv')
+    csv_file = path_data / Path('ML_CUP/shuffled_cup.csv')
     return pd.read_csv(csv_file, index_col=0)
 
 

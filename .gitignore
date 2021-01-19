@@ -5,3 +5,4 @@ __pycache__
 data
 !data/ML_CUP
 !data/MONK
+!data/NN_training
