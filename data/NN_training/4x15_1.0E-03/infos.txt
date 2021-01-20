@@ -5,7 +5,7 @@ beta2 = 0.999
 weight_decay = 0
 mb_size = 32
 
-MEE mean: 3.0683176439635864
-MEE std: 0.13882426468276698
-Time (seconds): 27.65904959100135
+MEE mean: 3.0448069328809306
+MEE std: 0.0
+Time (seconds): 7.762797019000001
 Convergence: True
