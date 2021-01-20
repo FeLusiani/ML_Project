@@ -1,0 +1,11 @@
+layers = [ 10, 80, 80,]
+lr = 0.02
+beta1 = 0.9
+beta2 = 0.999
+weight_decay = 0
+mb_size = 32
+
+MEE mean: 3.0554485546939802
+MEE std: 0.1203758454889218
+Time (seconds): 18.788412727998548
+Convergence: True

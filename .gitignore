@@ -2,7 +2,7 @@
 .ipynb_checkpoints
 __pycache__
 .vscode
-data
-!data/ML_CUP
-!data/MONK
-!data/NN_training
+data/*
+!data/ML_CUP/
+!data/MONK/
+!data/NN_training/
