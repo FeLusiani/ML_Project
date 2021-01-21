@@ -24,8 +24,8 @@ class NN_HyperParameters:
 
 def weights_init(m):
     if isinstance(m, nn.Linear):
-        torch.nn.init.xavier_normal_(m.weight)
-        torch.nn.init.zeros_(m.bias)
+        nn.init.xavier_normal_(m.weight)
+        nn.init.normal_(m.bias)
 
 
 class NN_module(nn.Module):
@@ -76,7 +76,9 @@ def epoch_minibatches(mb_size, X, Y):
 
 
 def MEE(x,y,mean=True):
-    """Iteratates along the first axis and
+    """Mean Euclidean Error for pytorch.Tensor class.
+    
+    Iteratates along the first axis and
     applies the euclidean distance to each element.
     The resulting values are averaged if `mean=True` (default),
     otherwise summed."""
