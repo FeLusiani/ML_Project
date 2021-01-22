@@ -7,3 +7,4 @@ data/*
 !data/MONK/
 !data/NN_training/
 !data/NN_grid_search/
+!data/ELM_results.csv

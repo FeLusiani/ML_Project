@@ -4,56 +4,34 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 from numpy.linalg import norm
 from sklearn.model_selection import RepeatedKFold
+import time
+
 
 
 # function that train the algorithm with the function passed
-#
-
-def kFoldCross(*args, out_scaler=False):
-    if out_scaler:
-        return kFoldCross_outscaled(*args)
-    else:
-        return kFoldCross_normal(*args)
 
 
-def kFoldCross_normal(trainCallback, predictcallback, X_dev, Y_dev, n_splits):
+def kFoldCross(trainCallback, predictCallback, X_dev, Y_dev, n_splits, resetCallback=None):
     kf = KFold(n_splits=n_splits)
     ValError = []
 
     for train, val in kf.split(X_dev):
+        start_time = time.process_time()
+
+        if resetCallback: resetCallback()
         trainCallback(X_dev[train], Y_dev[train])
-        y_predicted = predictcallback(X_dev[val])
+        y_predicted = predictCallback(X_dev[val])
         val_e = MEE(y_predicted, Y_dev[val])
         ValError.append(val_e)
+
+        seconds = time.process_time()-start_time
     
     ValError = np.array(ValError)
 
     mean_ValError = np.mean(ValError)
     std_ValError = np.std(ValError)
 
-    return mean_ValError, std_ValError
-
-
-def kFoldCross_outscaled(trainCallback, predictcallback, X_dev, Y_dev, n_splits):
-    kf = KFold(n_splits=n_splits)
-    ValError = []
-
-    out_scaler = StandardScaler()
-    Y_devS = out_scaler.fit_transform(Y_dev)
-
-    for train, val in kf.split(X_dev):
-        trainCallback(X_dev[train], Y_devS[train])
-        y_predicted = predictcallback(X_dev[val])
-        y_predicted = out_scaler.inverse_transform(y_predicted)
-        val_e = MEE(y_predicted, Y_dev[val])
-        ValError.append(val_e)
-    
-    ValError = np.array(ValError)
-
-    mean_ValError = np.mean(ValError)
-    std_ValError = np.std(ValError)
-
-    return mean_ValError, std_ValError
+    return mean_ValError, std_ValError, seconds
 
 
 def MEE(x,y,mean=True):
