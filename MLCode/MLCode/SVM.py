@@ -8,7 +8,7 @@ def get_HP_names(kernel):
     elif kernel == 'poly':
         hp_names=['C', 'epsilon', 'degree', 'coeff']
     elif kernel == 'sigmoid':
-        hp_names=['C', 'epsilon', 'coeff']
+        hp_names=['C', 'epsilon', 'gamma', 'coeff']
     
     return hp_names
 
