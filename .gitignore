@@ -2,10 +2,3 @@
 .ipynb_checkpoints
 __pycache__
 .vscode
-data/*
-!data/ML_CUP/
-!data/MONK/
-!data/NN_training/
-!data/NN_grid_search/
-!data/ELM_results.csv
-!data/SVM_results_rbf.csv
