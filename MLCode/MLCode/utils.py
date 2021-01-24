@@ -127,16 +127,16 @@ def unique_path(directory, name_pattern):
             return path
 
 
-def writeOutput(result, name):
+def writeOutput(result, file):
     # Name1  Surname1, Name2 Surname2
     # Group Nickname
     # ML-CUP18
     # 02/11/2018
     df = pd.DataFrame(result)
     now = datetime.datetime.now()
-    f = open(name, "w")
+    f = open(file, "w")
     f.write("# Christian Esposito, Federico Lusiani\n")
-    f.write("# Cheesleaders\n")
+    f.write("# Cheeseleaders\n")
     f.write("# ML-CUP20\n")
     f.write("# " + str(now.day) + "/" + str(now.month) + "/" + str(now.year) + "\n")
     df.index += 1
