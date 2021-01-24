@@ -4,6 +4,7 @@ import numpy as np
 from .conf import path_data
 import matplotlib.pyplot as plt
 import datetime
+from sklearn.preprocessing import StandardScaler
 
 
 def load_cup_data(train=True):
@@ -64,22 +65,30 @@ def np_cup_TR(df, test=False):
     """Returns `(X, Y)` numpy arrays from a CUP dataset (`pandas.DataFrame`).
     If `test=False` (default), only the first 90% of the data will be returned,
     otherwise only the remaining 10% will be returned.
+    `X` data is scaled with sklearn `StandardScaler` (fitted on development set).
     """
     matrix = df.to_numpy()
     # test samples are 10% of all the samples
-    test_samples = matrix.shape[0] // 10 
+    test_samples = matrix.shape[0] // 10
+
+    # the first 90%
+    dev_set = matrix[:-test_samples]
+    # the last 10%
+    test_set = matrix[-test_samples:]
+    
+    X_dev = dev_set[:, :10]
+    Y_dev = dev_set[:, 10:]
+
+    X_test = test_set[:, :10]
+    Y_test = test_set[:, 10:]
+
+    X_scaler = StandardScaler()
+    X_scaler.fit(X_dev)
 
     if test:
-        # the last 10%
-        matrix = matrix[-test_samples:]
+        return X_scaler.transform(X_test), Y_test
     else:
-        # the first 90%
-        matrix = matrix[:-test_samples]
-
-    X = matrix[:, :10]
-    Y = matrix[:, 10:]
-
-    return X, Y
+        return X_scaler.transform(X_dev), Y_dev
 
 
 def rescale_bin(data):
