@@ -136,7 +136,7 @@ def writeOutput(result, file):
     now = datetime.datetime.now()
     f = open(file, "w")
     f.write("# Christian Esposito, Federico Lusiani\n")
-    f.write("# Cheeseleaders\n")
+    f.write("# CheeseLeaders\n")
     f.write("# ML-CUP20\n")
     f.write("# " + str(now.day) + "/" + str(now.month) + "/" + str(now.year) + "\n")
     df.index += 1
