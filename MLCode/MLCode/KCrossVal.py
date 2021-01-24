@@ -11,10 +11,14 @@ import time
 # function that train the algorithm with the function passed
 
 def kFoldCross(*args, out_scaler=False):
+    start_time = time.process_time()
     if out_scaler:
-        return kFoldCross_outscaled(*args)
+        res = kFoldCross_outscaled(*args)
     else:
-        return kFoldCross_normal(*args)
+        res = kFoldCross_normal(*args)
+    
+    seconds = time.process_time()-start_time
+    return res + (seconds,)
 
 
 def kFoldCross_normal(trainCallback, predictcallback, X_dev, Y_dev, n_splits):
