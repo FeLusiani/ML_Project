@@ -1,5 +1,5 @@
-We have tested 3 different models on the regression problem: Extreme Learning Machine,
+We have tested 4 different models on the regression problem: Extreme Learning Machine,
 SVM, MLP and KNN. Hyper-parameters grid search was made with 5-fold cross-validation
 on a development set (90% of data). The final model is KNN with K=15 and
 distance weight function. It has been trained on the entirety of the development set,
-and tested against the unseen test set (10% of data).  
+and tested against the unseen test set (10% of data).
