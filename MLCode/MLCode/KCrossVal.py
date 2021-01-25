@@ -21,44 +21,64 @@ def kFoldCross(*args, out_scaler=False):
     return res + (seconds,)
 
 
-def kFoldCross_normal(trainCallback, predictcallback, X_dev, Y_dev, n_splits):
+def kFoldCross_normal(trainCallback, predictCallback, X_dev, Y_dev, n_splits):
     kf = KFold(n_splits=n_splits)
     ValError = []
+    TrError = []
 
     for train, val in kf.split(X_dev):
         trainCallback(X_dev[train], Y_dev[train])
-        y_predicted = predictcallback(X_dev[val])
-        val_e = MEE(y_predicted, Y_dev[val])
+
+        val_predicted = predictCallback(X_dev[val])
+        val_e = MEE(val_predicted, Y_dev[val])
         ValError.append(val_e)
+
+        tr_predicted = predictCallback(X_dev[train])
+        tr_e = MEE(tr_predicted, Y_dev[train])
+        TrError.append(tr_e)
     
     ValError = np.array(ValError)
+    TrError = np.array(TrError)
 
     mean_ValError = np.mean(ValError)
     std_ValError = np.std(ValError)
 
-    return mean_ValError, std_ValError
+    mean_TrError = np.mean(TrError)
+
+    return mean_ValError, std_ValError, mean_TrError
 
 
-def kFoldCross_outscaled(trainCallback, predictcallback, X_dev, Y_dev, n_splits):
+def kFoldCross_outscaled(trainCallback, predictCallback, X_dev, Y_dev, n_splits):
     kf = KFold(n_splits=n_splits)
     ValError = []
+    TrError = []
 
     out_scaler = StandardScaler()
     Y_devS = out_scaler.fit_transform(Y_dev)
 
     for train, val in kf.split(X_dev):
         trainCallback(X_dev[train], Y_devS[train])
-        y_predicted = predictcallback(X_dev[val])
-        y_predicted = out_scaler.inverse_transform(y_predicted)
-        val_e = MEE(y_predicted, Y_dev[val])
+
+        val_predicted = predictCallback(X_dev[val])
+        val_predicted = out_scaler.inverse_transform(val_predicted)
+        val_e = MEE(val_predicted, Y_dev[val])
         ValError.append(val_e)
+
+        tr_predicted = predictCallback(X_dev[train])
+        tr_predicted = out_scaler.inverse_transform(tr_predicted)
+        tr_e = MEE(tr_predicted, Y_dev[train])
+        TrError.append(tr_e)
+
     
     ValError = np.array(ValError)
+    TrError = np.array(TrError)
 
     mean_ValError = np.mean(ValError)
     std_ValError = np.std(ValError)
 
-    return mean_ValError, std_ValError
+    mean_TrError = np.mean(TrError)
+
+    return mean_ValError, std_ValError, mean_TrError
 
 
 def MEE(x,y,mean=True):
