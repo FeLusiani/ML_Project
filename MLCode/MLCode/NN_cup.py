@@ -158,7 +158,7 @@ def train_NN_K_validation(model, k_folds:int, X_dev, Y_dev, iters:int=None):
 
 
 
-def get_model_val_err(directory: Path):
+def get_model_infos(directory: Path):
     """Returns validation error (mean and std) from saved model directory.
     """
     info_file = directory / Path('infos.txt')
@@ -166,9 +166,11 @@ def get_model_val_err(directory: Path):
     lines = info_text.split('\n')
     mean_line = [x for x in lines if x.startswith('MEE mean: ') ][0]
     var_line = [x for x in lines if x.startswith('MEE std: ') ][0]
+    t_line = [x for x in lines if x.startswith('Time (seconds): ') ][0]
     n_char_mean = len('MEE mean: ')
     n_char_var = len('MEE std: ')
-    return float(mean_line[n_char_mean:]), float(var_line[n_char_var:])
+    n_t_time = len('Time (seconds): ')
+    return float(mean_line[n_char_mean:]), float(var_line[n_char_var:]), float(t_line[n_t_time:])
 
 def saved_NN_models():
     """Returns a pandas DataFrame with `model_name, MEE_mean, MEE_std`
@@ -177,8 +179,8 @@ def saved_NN_models():
     NN_directory = path_data / Path('NN_training')
     models = []
     for dir in NN_directory.iterdir():
-        val_err = get_model_val_err(dir)
-        model = (dir.name, val_err[0], val_err[1])
+        infos = get_model_infos(dir)
+        model = (dir.name, infos[0], infos[1], infos[2])
         models.append(model)
     
-    return pd.DataFrame(models, columns=['model_name', 'MEE_mean', 'MEE_std'])
+    return pd.DataFrame(models, columns=['model_name', 'MEE_mean', 'MEE_std', 'seconds'])
